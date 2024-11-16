@@ -1,32 +1,33 @@
-# serve_model.py
-from flask import Flask, request, jsonify
-import joblib
-import numpy as np
-import logging
+from fastapi import FastAPI
+from pydantic import BaseModel
+import pickle
 
-app = Flask(__name__)
+app = FastAPI()
 
-# Load the model
-model = joblib.load("path/to/your_model.pkl")
+# Pydantic model for input data
+class Transaction(BaseModel):
+    transaction_id: str
+    amount: float
+    customer_id: str
+    product_category: str
 
-# Setup logging
-logging.basicConfig(level=logging.INFO)
+@app.get("/")
+def read_root():
+    return {"message": "Fraud Detection API is running"}
 
-@app.route('/predict', methods=['POST'])
-def predict():
-    try:
-        data = request.get_json()
-        features = np.array(data['features']).reshape(1, -1)
-        prediction = model.predict(features)
-        logging.info(f"Prediction made: {prediction[0]} for input {data['features']}")
-        return jsonify({'prediction': int(prediction[0])})
-    except Exception as e:
-        logging.error(f"Error: {e}")
-        return jsonify({'error': str(e)}), 500
 
-@app.route('/health', methods=['GET'])
-def health_check():
-    return jsonify({'status': 'API is healthy'}), 200
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+# Load the trained model
+model = pickle.load(open("random_forest_model.pkl", "rb"))
+
+@app.post("/predict")
+def predict_fraud(transaction: Transaction):
+    # Prepare input data for the model
+    input_data = [[
+        transaction.amount,
+        transaction.customer_id,
+        transaction.product_category
+    ]]
+    # Predict using the model
+    prediction = model.predict(input_data)
+    return {"transaction_id": transaction.transaction_id, "fraud": bool(prediction[0])}
