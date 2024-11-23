@@ -1,4 +1,4 @@
-# Fraud Detection API Project
+# Fraud Detection ML Project
 
 This repository contains a comprehensive project for fraud detection, including exploratory data analysis (EDA), model training and evaluation, and a deployed API for real-time fraud detection.
 
